@@ -77,12 +77,14 @@ def apply_chat_template(messages: list[dict[str, str]]) -> str:
 
     if cfg.api == "vllm":
         tokenizer_config = cfg.tokenizer_config
-        if cfg.model.chat_template.startswith("mistralai/"):
+        model = cfg.model.pretrained_model_name_or_path
+        chat_template_name = cfg.model.chat_template
+        if chat_template_name.startswith("mistralai/"):
             kwargs = {
                 "raise_exception": lambda _: "",
                 **tokenizer_config,
             }
-        elif cfg.model.chat_template.startswith("tokyotech-llm/Swallow") and cfg.model.chat_template.endswith("instruct-v0.1"):
+        elif model.startswith("tokyotech-llm/Swallow") and model.endswith("instruct-v0.1"):
             kwargs = copy(tokenizer_config)
             for key in ["bos_token", "eos_token", "unk_token"]:
                 kwargs[key] = kwargs[key]["content"]
