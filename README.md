@@ -127,15 +127,6 @@ This framework also supports evaluating models using VLLM.  You need to create a
 
 2. **Check the W&B dashboard:** The results of the evaluation will be logged to the specified W&B project.
 
-## Data Preparation
-
-- **Jaster:**  [https://huggingface.co/datasets/wandb-japan/jaster](https://huggingface.co/datasets/wandb-japan/jaster)
-- **LCTG:**  [https://huggingface.co/datasets/wandb-japan/lctg](https://huggingface.co/datasets/wandb-japan/lctg)
-- **JBQQ:** [https://huggingface.co/datasets/wandb-japan/jbbq](https://huggingface.co/datasets/wandb-japan/jbbq)
-- **Sample Dataset:** [https://huggingface.co/datasets/t-ibi/llm-leaderboard/sample_dataset](https://huggingface.co/datasets/t-ibi/llm-leaderboard/sample_dataset)
-- **MT-Bench:** [https://huggingface.co/datasets/wandb-japan/mtbench_ja_question](https://huggingface.co/datasets/wandb-japan/mtbench_ja_question)
-- **Toxicity:** [https://huggingface.co/datasets/wandb-japan/toxicity-dataset-private/toxicity_dataset_full](https://huggingface.co/datasets/wandb-japan/toxicity-dataset-private/toxicity_dataset_full)
-
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request if you have any suggestions or improvements.
