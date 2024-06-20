@@ -1,131 +1,145 @@
-# Nejumi-leaderboard Neo
+## Evaluation Framework for Japanese Language Models
 
-## Set up
-1. Set up environment variables
-```
-export WANDB_API_KEY=<your WANDB_API_KEY>
-export OPENAI_API_KEY=<your OPENAI_API_KEY>
-export LANG=ja_JP.UTF-8
-# if needed, set the following API KEY too
-export ANTHROPIC_API_KEY=<your ANTHROPIC_API_KEY>
-export GOOGLE_API_KEY=<your GOOGLE_API_KEY>
-export COHERE_API_KEY=<your COHERE_API_KEY>
-export MISTRAL_API_KEY=<your MISTRAL_API_KEY>
-export AWS_ACCESS_KEY_ID=<your AWS_ACCESS_KEY_ID>
-export AWS_SECRET_ACCESS_KEY=<your AWS_SECRET_ACCESS_KEY>
-export AWS_DEFAULT_REGION=<your AWS_DEFAULT_REGION>
-# if needed, please login in huggingface
-huggingface-cli login
-```
+This repository provides a framework for evaluating Japanese Language Models (JLMs) on various tasks, including foundational language capabilities, alignment capabilities, and translation. 
 
+## Configuration
 
+The `base_config.yaml` file contains basic settings, and you can create a separate YAML file for model-specific settings. This allows for easy customization of settings for each model while maintaining a consistent base configuration.
 
-## Data Prepartion 
-### preparation for llm-jp-eval
-If you use wandb's Artifacts, this process is not necessary. The following data is currently registered in wandb's Artifacts.
+### General Settings
 
-- v 1.0.0: "wandb-japan/llm-leaderboard/jaster:v0"
-- v 1.1.0: "wandb-japan/llm-leaderboard/jaster:v3"
-- v 1.2.1 (latest): "wandb-japan/llm-leaderboard/jaster:v6"
+- **wandb:** Information used for Weights & Biases (W&B) support.
+    - `entity`: Name of the W&B Entity.
+    - `project`: Name of the W&B Project.
+    - `run_name`: Name of the W&B run. Please set up run name in a model-specific config.
+- **github_version:** For recording, not required to be changed.
+- **testmode:** Default is false. Set to true for lightweight implementation with a small number of questions per category (for functionality checks).
+- **run:** Set to true for each evaluation category you want to run.
+    - `GLP`: True for evaluating foundational language capabilities.
+    - `ALT`: True for evaluating alignment capabilities. This option is not available to general users as it includes private datasets.
+    
+### Model Settings
 
-Below, an example of the process of registering data in wandb's Artifacts is described for reference 
+- **model:** Information about the model.
+    - `use_wandb_artifacts`: Whether to use WandB artifacts for the model.
+    - `max_model_len`: Maximum token length of the input.
+    - `chat_template`: Path to the chat template file. This is required for open-weights models.
+    - `dtype`: Data type. Choose from float32, float16, bfloat16.
+    - `trust_remote_code`:  Default is true.
+    - `device_map`: Device map. Default is "auto".
+    - `load_in_8bit`: 8-bit quantization. Default is false.
+    - `load_in_4bit`: 4-bit quantization. Default is false.
 
-1. create dataset by following an instruction of [llm-jp-eval](https://github.com/llm-jp/llm-jp-eval/tree/wandb-nejumi2)
+- **generator:** Settings for generation. For more details, refer to the [generation_utils](https://huggingface.co/docs/transformers/internal/generation_utils) in Hugging Face Transformers.
+    - `top_p`: top-p sampling. Default is 1.0.
+    - `temperature`: The temperature for sampling. Default is 0.1.
+    - `max_tokens`: Maximum number of tokens to generate. This value will be overwritten in the script.
 
-2. register to wandb artifacts
-```bash
-python3 scripts/upload_jaster.py -e <wandb/entity> -p <wandb/project> -d <dataset folder> -v <version>
-```
+- **num_few_shots:**  Number of few-shot examples to use.
 
-### preparation for mtbench
-If you use wandb's Artifacts, this process is not necessary. The following data is currently registered in wandb's Artifacts.
-If you create questions or prompts originally, you also need to create reference answers. The method for creating reference answers can be referenced from the [FastChat Readme](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
+- **jaster:**  Settings for the Jaster dataset.
+    - `artifacts_path`: URL of the W&B Artifact for the Jaster dataset.
+    - `dataset_dir`: Directory for the Jaster dataset after downloading the Artifact.
 
-The following data are based on [Stability-AI/FastChat/jp-stable](https://github.com/Stability-AI/FastChat/tree/jp-stable)
-- japanese questions
-  - Stability-AI/FastChat (5d4f13a) v1.0 : 'wandb-japan/llm-leaderboard/mtbench_ja_question:v0'
-  - [Stability-AI/FastChat (97d0f08) v1.1 (latest)](https://github.com/Stability-AI/FastChat/commit/97d0f0863c5ee8610f00c94a293418a4209c52dd) : 'wandb-japan/llm-leaderboard/mtbench_ja_question:v1'
-- japanese prompt
-  - [Stability-AI/FastChat (5d4f13a) (latest)](https://github.com/Stability-AI/FastChat/tree/jp-stable) : 'wandb-japan/llm-leaderboard/mtbench_ja_prompt:v1'
-- reference answer
-  - [Stability-AI/FastChat (5d4f13a) (latest)](https://github.com/Stability-AI/FastChat/tree/jp-stable) : 'wandb-japan/llm-leaderboard/mtbench_ja_referenceanswer:v0'
+- **jmmlu_robustness:** Whether to include the JMMLU Robustness evaluation. Default is True.
 
+- **lctg:** Settings for the LCTG dataset.
+    - `artifacts_path`: URL of the W&B Artifact for the LCTG dataset.
+    - `dataset_dir`: Directory for the LCTG dataset after downloading the Artifact.
 
-Below, an example of the process of registering data in wandb's Artifacts is described for reference 
-```bash
-# register questions
-  python3 scripts/upload_mtbench_question.py -e <wandb/entity> -p <wandb/project> -v <data version> -f "your path"
-```
-## Create config.yaml file
-1. create configs/config.yaml
-```bash
-cp configs/config_template.yaml configs/config.yaml
-```
-2. set each variable properly by following the below instruction
+- **jbbq:** Settings for the JBQQ dataset.
+    - `artifacts_path`: URL of the W&B Artifact for the JBQQ dataset.
+    - `dataset_dir`: Directory for the JBQQ dataset after downloading the Artifact.
 
-general
-- `wandb`: Information used for W&B support.
-  - `entity`: Name of the W&B Entity.
-  - `project`: Name of the W&B Project.
-  - `run_name`: Name of the W&B run. If you set "model name" as run name, you can see easily find run on Wandb dashboard.
-- `github_version`: For recording. Not need to be changed
-- `testmode`: The default is false. If set to true, it allows for a lightweight implementation where only 1 or 2 questions are extracted from each category. Please set it to true when you want to perform a functionality check
-- `api`:  If you don't use api, please set "api" as "false". If you use api, please select from "openai", "anthropic", "google", "cohere"
-- model: Information of model
-  - `_target_`: transformers.AutoModelForCausalLM.from_pretrained
-  -`pretrained_model_name_or_path`: Name of your model. if you use openai api, put the name of model
-  - `trust_remote_code`: true
-  - `device_map`: device map. The default is "auto"
-  - `load_in_8bit`: 8 bit quantization. The default is false
-  - `load_in_4bit`: 4 bit quantization.The default is false
-- tokenizer: Information of tokenizer
-  - `pretrained_model_name_or_path`: Name of tokenizer
-  - `use_fast`: If set to true, it uses the fast tokenizer. The default is true
-- generator: Settings for generation. For more details, refer to the [generation_utils](https://huggingface.co/docs/transformers/internal/generation_utils)  in huggingface transformers.
-  - `top_p`: top-p sampling. The default is 1.0.
-  - `top_k`: top-k sampling. Default is commented out.
-  - `temperature`: The temperature for sampling. Default is commented out.
-  - `repetition_penalty`: Repetition penalty. The default is 1.0.
+- **toxicity:** Settings for the toxicity evaluation.
+    - `artifact_path`: URL of the W&B Artifact for the toxicity dataset.
+    - `judge_prompts_path`: URL of the W&B Artifact for the toxicity judge prompts.
+    - `max_workers`: Number of workers for parallel processing.
+    - `judge_model`: Model used for toxicity judgment. Default is `gpt-4o-2024-05-13`
+    - `visualize_ids`: IDs to visualize.
 
-variables for llm-jp-eval
-- `max_seq_length`: The maximum length of the input. The default is 2048.
-- `dataset_artifact`: URL of wandb Artifacts of evaluation dataset. Choose the version from the Data Preparation section
-- `dataset_dir`: location of the evaluation data after downloading wandb Artifacts
-- `target_dataset`: The dataset to evaluate. The default is all, which evaluates all datasets. Specify the dataset name (like jnli) to evaluate a specific dataset.
-- `log_dir`: The directory to save logs. The default is ./logs.
-- `torch_dtype`: Settings for fp16, bf16, fp32. The default is bf16.
-- `custom_prompt_template`: Specification of custom prompts. The default is null. (The default prompt is using the alpaca format.)
-- `custom_fewshots_template`:  Specification of custom prompts for few-shot settings. The default is null. (The default prompt is using the alpaca format.)
-
-- `metainfo`:
-  - `model_name`: Model name. This is for record, so doesn't affect evaluation performance.  
-  - `model_type`: Category information of the language model used for the evaluation experiment. This is for record, so doesn't affect evaluation performance. 
-  - `instruction_tuning_method`: Tuning method of model. This is for record, so doesn't affect evaluation performance. 
-  - `instruction_tuning_data`: Tuning data of model. This is for record, so doesn't affect evaluation performance. 
-  - `num_few_shots`: The number of questions to be presented as Few-shot. The default is 0.
-  - `llm-jp-eval-version`: Version information of llm-jp-eval.
-
-for mtbench
-- `mtbench`:
-  - `question_artifacts_path`: URL of wandb Artifacts of evaluation dataset. Choose the version from the Data Preparation section
-  - `referenceanswer_artifacts_path`: URL of wandb Artifacts of reference answer. Choose the version from the Data Preparation section
-  - `judge_prompt_artifacts_path`: URL of wandb Artifacts of judge prompt. Choose the version from the Data Preparation section
-  - `bench_name`: If you evaluate japanese dataset, set 'japanese_mt_benct'. If you evaluate English dataset, set 'mt_benct'.
-  - `model_id`: Name of model
-  - `max_new_token`: The maximum length of the input. The default is 1024.
-  - `num_gpus_per_model`: Number of GPUs per model. If you use multiple gpu, change here. The default is 1.
-  - `num_gpus_total`:  Number of Total GPUs. If you use multiple gpu, change here. The default is 1.
-  - `max_gpu_memory`: If you specifiy the max of GPU memory, change here. The default is null.
-  - `dtype`: Data type. Choose from None or float32 or float16 or bfloat16
-  - `judge_model`: Model used for evaluation. The default is 'gpt-4'
-  - `question_begin`,`question_end`,`mode`,`baseline_model`,`parallel`,`first_n`: Parameters for original FastChat. In this leaderboard, use the default values.
-  - `custom_conv_template`: If the model is not compatible FastChat, you need to use custom conv template, and set this variable true. Then, the custom conv template you set with the following variables will be used. The defalt is false.
+- **mtbench:** Settings for the MT-Bench evaluation.
+    - `temperature_override`: Override the temperature for each category of the MT-Bench.
+    - `question_artifacts_path`: URL of the W&B Artifact for the MT-Bench questions.
+    - `referenceanswer_artifacts_path`: URL of the W&B Artifact for the MT-Bench reference answers.
+    - `judge_prompt_artifacts_path`: URL of the W&B Artifact for the MT-Bench judge prompts.
+    - `bench_name`: Choose 'japanese_mt_bench' for the Japanese MT-Bench, or 'mt_bench' for the English version.
+    - `model_id`: The name of the model. You can replace this with a different value if needed.
+    - `question_begin`: Starting position for the question in the generated text.
+    - `question_end`: Ending position for the question in the generated text.
+    - `max_new_token`: Maximum number of new tokens to generate.
+    - `num_choices`: Number of choices to generate.
+    - `num_gpus_per_model`: Number of GPUs to use per model.
+    - `num_gpus_total`: Total number of GPUs to use.
+    - `max_gpu_memory`: Maximum GPU memory to use (leave as null to use the default).
+    - `dtype`: Data type. Choose from None, float32, float16, bfloat16.
+    - `judge_model`: Model used for judging the generated responses. Default is `gpt-4o-2024-05-13`
+    - `mode`: Mode of evaluation. Default is 'single'.
+    - `baseline_model`: Model used for comparison. Leave as null for default behavior.
+    - `parallel`: Number of parallel threads to use.
+    - `first_n`: Number of generated responses to use for comparison. Leave as null for default behavior.
 
 
-   
-## Evaluation execution
-1. run scripts/run_eval.py
-```bash
-python3 scripts/run_eval.py
-```
-2. check the wandb dashboard
+## API Model Configurations
+
+This framework supports evaluating models using APIs such as OpenAI, Anthropic, Google, and Cohere. You need to create a separate config file for each API model. For example, the config file for OpenAI's gpt-4o-2024-05-13 would be named `configs/config-gpt-4o-2024-05-13.yaml`.
+
+### API Model Configuration Settings
+
+- **wandb:** Information used for Weights & Biases (W&B) support.
+    - `run_name`: Name of the W&B run.
+- **api:** Choose the API to use from `openai`, `anthropic`, `google`, `cohere`.
+- **batch_size:** Batch size for API calls (recommended: 32).
+- **model:** Information about the model.
+    - `pretrained_model_name_or_path`: Name of the API model.
+    - `size_category`: Specify "api" to indicate using an API model.
+    - `size`: Model size (leave as null for API models).
+    - `release_date`: Model release date.
+
+## VLLM Model Configurations
+
+This framework also supports evaluating models using VLLM.  You need to create a separate config file for each VLLM model. For example, the config file for Microsoft's Phi-3-medium-128k-instruct would be named `configs/config-Phi-3-medium-128k-instruct.yaml`.
+
+### VLLM Model Configuration Settings
+
+- **wandb:** Information used for Weights & Biases (W&B) support.
+    - `run_name`: Name of the W&B run.
+- **api:** Set to `vllm` to indicate using a VLLM model.
+- **num_gpus:** Number of GPUs to use.
+- **batch_size:** Batch size for VLLM (recommended: 256).
+- **model:** Information about the model.
+    - `pretrained_model_name_or_path`: Name of the VLLM model.
+    - `chat_template`: Path to the chat template file (if needed).
+    - `size_category`: Specify "api" to indicate using an API model.
+    - `size`: Model size (parameter).
+    - `release_date`: Model release date (MM/DD/YYYY).
+
+## Evaluation Execution
+
+1. **Run the evaluation script:**
+
+   You can use either `-c` or `-s` option:
+   - **-c (config):** Specify the config file by its name, e.g., `python3 scripts/run_eval.py -c config-gpt-4o-2024-05-13.yaml`
+   - **-s (select-config):** Select from a list of available config files. This option is useful if you have multiple config files. 
+   ```bash
+   python3 scripts/run_eval.py -s
+   ```
+
+2. **Check the W&B dashboard:** The results of the evaluation will be logged to the specified W&B project.
+
+## Data Preparation
+
+- **Jaster:**  [https://huggingface.co/datasets/wandb-japan/jaster](https://huggingface.co/datasets/wandb-japan/jaster)
+- **LCTG:**  [https://huggingface.co/datasets/wandb-japan/lctg](https://huggingface.co/datasets/wandb-japan/lctg)
+- **JBQQ:** [https://huggingface.co/datasets/wandb-japan/jbbq](https://huggingface.co/datasets/wandb-japan/jbbq)
+- **Sample Dataset:** [https://huggingface.co/datasets/t-ibi/llm-leaderboard/sample_dataset](https://huggingface.co/datasets/t-ibi/llm-leaderboard/sample_dataset)
+- **MT-Bench:** [https://huggingface.co/datasets/wandb-japan/mtbench_ja_question](https://huggingface.co/datasets/wandb-japan/mtbench_ja_question)
+- **Toxicity:** [https://huggingface.co/datasets/wandb-japan/toxicity-dataset-private/toxicity_dataset_full](https://huggingface.co/datasets/wandb-japan/toxicity-dataset-private/toxicity_dataset_full)
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request if you have any suggestions or improvements.
+
+## License
+
+This project is licensed under the Apache 2.0 License.
